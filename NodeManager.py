@@ -10,7 +10,6 @@ def startNodethread(name):
 
 
 def main():
-    print 'start node manager'
     Logger().do().info('start node manager')
     for i in range(1):
         t = threading.Thread(target=startNodethread, name='LoopThread' + str(i), args=(i,))
