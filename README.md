@@ -1,2 +1,2 @@
 # floorcontrol
-A simulate program of
+A simulate program of MCPTT
