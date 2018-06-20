@@ -12,6 +12,7 @@ class Node(object):
     def __init__(self, name):
         self.name = name
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.client_socket.connect((const.HOST, const.SERVER_PORT))
         self.client_socket.settimeout(10)
         self.start_time = time.time()
@@ -22,9 +23,7 @@ class Node(object):
         # 启动接收线程
         node_recv_thread = threading.Thread(target=self.recv, name='node_recv')
         node_recv_thread.start()
-        # # 启动发送线程
-        # node_start_thread = threading.Thread(target=self.send, name='node_send')
-        # node_start_thread.start()
+
 
         send_timer = threading.Timer(1, self.fun_timer)
         send_timer.start()
@@ -42,6 +41,7 @@ class Node(object):
 
             except socket.timeout as e:
                 print "socket time out"
+                self.stop()
         print "recv done"
 
     def fsm(self):
@@ -55,11 +55,14 @@ class Node(object):
     def fun_timer(self):
         # simulator time: 100s
         if time.time() - self.start_time < 100 and self.isruning is True:
-            self.client_socket.send("request floor")
-            global timer
-            timer = threading.Timer(self.get_exp(), self.fun_timer)
-            timer.start()
-            pass
+            try:
+                print 'request'
+                self.client_socket.send("request floor")
+                global timer
+                timer = threading.Timer(self.get_exp(), self.fun_timer)
+                timer.start()
+            except:
+                self.stop()
         else:
             self.stop()
 
