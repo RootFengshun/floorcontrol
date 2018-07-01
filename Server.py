@@ -13,7 +13,6 @@ def recv_signal():
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     addr = ((const.HOST, const.SERVER_PORT))
     server_socket.bind(addr)
-    server_socket
     server_socket.listen(100)
     try:
         for i in range(100):

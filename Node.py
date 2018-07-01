@@ -6,6 +6,8 @@ import threading
 import time
 
 from GlobalSetting import const
+from Signal import signal
+from StateMachine import StateMachine
 
 
 class Node(object):
@@ -19,6 +21,7 @@ class Node(object):
         self.isruning = True
 
         self.recv2fsm = Queue.Queue(3)
+        self.state = StateMachine()
 
         # 启动接收线程
         node_recv_thread = threading.Thread(target=self.recv, name='node_recv')
@@ -36,6 +39,7 @@ class Node(object):
         while (self.isruning == True):
             try:
                 data = self.client_socket.recv(1000)
+
                 self.recv2fsm.put("sleep")
                 print data
 
@@ -56,8 +60,8 @@ class Node(object):
         # simulator time: 100s
         if time.time() - self.start_time < 100 and self.isruning is True:
             try:
-                print 'request'
-                self.client_socket.send("request floor")
+                print signal.FLOOR_REQUEST
+                self.client_socket.send(signal.FLOOR_REQUEST)
                 global timer
                 timer = threading.Timer(self.get_exp(), self.fun_timer)
                 timer.start()
@@ -65,7 +69,6 @@ class Node(object):
                 self.stop()
         else:
             self.stop()
-
 
     def get_exp(self):
         return random.expovariate(0.5)
