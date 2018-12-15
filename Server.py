@@ -25,28 +25,29 @@ def recv_signal():
         server_socket = None
 
 
-def tcplink(sock, addr):
-    Logger().do().info("server thread " + threading.current_thread().getName())
-
-    while True:
-        data = sock.recv(1024)
-        if not data or data.decode('utf-8') == 'exit':
-            break
-        relay(data, sock)
-    sock.close()
-
-
 def relay(data, selfSocket):
     for socket in socket_list:
+
         if (socket == selfSocket):
             continue
         socket.send(data)
 
 
-def main():
-    Logger().do().info("start server thread")
-    recv_signal()
+def tcplink(sock, addr):
+    while True:
+        data = sock.recv(1024)
+        if not data or data.decode('utf-8') == 'exit':
+            break
 
+        relay_delay = threading.Timer(2, relay, [data, sock])
+        relay_delay.start()
+    sock.close()
+
+
+
+
+def main():
+    recv_signal()
 
 if __name__ == '__main__':
     main()

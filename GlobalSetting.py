@@ -24,7 +24,7 @@ const.WELCOMSTRING = 'welcome to floor control system'
 # tips show config end   #
 
 # system simulator config start #
-const.REQ_TIME_OUT = 2
+
 
 
 # system simulator config end   #

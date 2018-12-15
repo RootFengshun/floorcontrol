@@ -22,7 +22,7 @@ class _signal:
 
 
 signal = _signal()
-signal.FLOOR_REQUEST = 1001
-signal.FLOOR_TAKEN = 1002
-signal.FLOOR_DENY = 1003
-signal.FLOOR_RELEASE = 1004
+signal.FLOOR_REQUEST = 'FLOOR_REQUEST'
+signal.FLOOR_TAKEN = 'FLOOR_TAKEN'
+signal.FLOOR_DENY = 'FLOOR_DENY'
+signal.FLOOR_RELEASE = 'FLOOR_RELEASE'
