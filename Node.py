@@ -68,13 +68,20 @@ class Node(object):
         self.stateMachine = Machine(model=self, states=self.states, transitions=self.transitions, initial='state_idle')
         self.enter_state_idle()
 
-        # 初始化定时器
+        #### 初始化定时器####
         # 随机发起
         self.timer_req =  threading.Timer(1, self.fun_random_req_timer)
         # 发起等待
         self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
+        # 讲话时间
+        self.timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
         self.root_timer = threading.Timer(paras.SIMULATOR_TIME, self.simulate_time_out)
         self.root_timer.start()
+
+        self.count_req_number = 0
+        self.count_taken_number = 0
+        self.count_req_period_list = []
+        self.count_req_time = 0
 
     def enter_state_idle(self):
         self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
@@ -87,6 +94,8 @@ class Node(object):
         # 重设定时器
         self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
         self.timer_req_timeout.start()
+        self.count_req_number = self.count_req_number + 1
+        self.count_req_time = time.time()
 
     def exit_state_pending_req(self):
         # 清空pending_req计时器
@@ -101,9 +110,10 @@ class Node(object):
         # 获得发言权
         if self.client_socket is not None and self.isRunning == True:
             self.client_socket.send(str(signal.FLOOR_TAKEN))
-        global timer_speak_timeout
-        timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
-        timer_speak_timeout.start()
+        self.timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
+        self.timer_speak_timeout.start()
+        self.count_taken_number = self.count_taken_number+1
+        self.count_req_period_list.append(time.time() - self.count_req_time)
 
     def exit_state_taken(self):
         pass
@@ -137,10 +147,6 @@ class Node(object):
         # 用于限制时间
         if self.isRunning is True:
             self.action_ptt_down()
-        # if time.time() - self.start_time < final.simulator_time and self.isRunning is True:
-        #     self.action_ptt_down()
-        # else:
-        #     self.stop()
 
     # 申请发言权超时，认为自己得到发言权
     def fun_pending_req_timeout(self):
@@ -243,5 +249,9 @@ class Node(object):
         self.client_socket.send('exit')
         self.client_socket.close()
         self.client_socket = None
-
+        # 回写数据
+        Logger().do().info('data')
+        Logger().do().info(self.count_req_number)
+        Logger().do().info(self.count_taken_number)
+        Logger().do().info(self.count_req_period_list)
 
