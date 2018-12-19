@@ -1,25 +1,33 @@
 # -*- coding: UTF-8 -*-
 import socket
 import threading
-
-from GlobalSetting import const
+import time
+from GlobalSetting import final
+from GlobalSetting import paras
 from LogUtils import Logger
 
-socket_list = set()
 
+socket_list = set()
+start_time = time.time()
 
 def recv_signal():
+    start_time = time.time()
+    socket_list = set()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 定义socket类型，网络通信，TCP
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    addr = ((const.HOST, const.SERVER_PORT))
+    addr = (final.HOST, final.SERVER_PORT)
     server_socket.bind(addr)
     server_socket.listen(100)
+    # 仅在仿真的前半程允许连接
+    Logger().do().info('start server thread')
+
     try:
-        for i in range(100):
+        for i in range(paras.NODE_NUMBER):
+
             sock, addr = server_socket.accept()
             socket_list.add(sock)
             # 创建新线程来处理TCP连接:
-            t = threading.Thread(target=tcplink, args=(sock, addr), name='server_thread_' + str(i))
+            t = threading.Thread(target=tcplink, args=(sock, ), name='server_thread_' + str(i))
             t.start()
     except:
         server_socket = None
@@ -33,14 +41,14 @@ def relay(data, selfSocket):
         socket.send(data)
 
 
-def tcplink(sock, addr):
+def tcplink(sock):
     while True:
         data = sock.recv(1024)
         if not data or data.decode('utf-8') == 'exit':
             break
-
         relay_delay = threading.Timer(2, relay, [data, sock])
         relay_delay.start()
+    # socket_list.remove(sock)
     sock.close()
 
 

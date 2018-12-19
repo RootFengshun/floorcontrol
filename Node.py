@@ -4,7 +4,8 @@ import socket
 import threading
 import time
 
-from GlobalSetting import const
+from GlobalSetting import paras
+from GlobalSetting import final
 from Signal import signal
 from transitions import Machine
 from LogUtils import Logger
@@ -20,31 +21,27 @@ class Node(object):
     state pend req : 其他人正在申请
     '''
 
-    const.REQ_TIME_OUT = 5
-    const.REQ_EXP_VALUE = 1
-    const.TANKEN_TIME = 2
-    timecount = 0
+
 
     def __init__(self, name):
-        global xx
-        xx = name
 
         self.name = name
         ## socket初始化##
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
-            self.client_socket.connect((const.HOST, const.SERVER_PORT))
+            self.client_socket.connect((final.HOST, final.SERVER_PORT))
             self.client_socket.settimeout(200)
+
         except:
             print 'error'
 
         self.start_time = time.time()
-        self.isruning = True
+        self.isRunning = True
+
         # 启动接收线程
         node_recv_thread = threading.Thread(target=self.recv, name='node_recv'+str(name))
         node_recv_thread.start()
-
 
         self.states = ['state_idle', 'state_pending_req', 'state_taken', 'state_granted', 'state_pend_req']
         ## state初始化 ##
@@ -72,21 +69,23 @@ class Node(object):
         self.enter_state_idle()
 
         # 初始化定时器
-        self.timer_req =  threading.Timer(self.get_exp(const.REQ_EXP_VALUE), self.fun_timer)
-        self.timer_req_timeout = threading.Timer(const.REQ_TIME_OUT, self.fun_pending_req_timeout)
+        # 随机发起
+        self.timer_req =  threading.Timer(1, self.fun_random_req_timer)
+        # 发起等待
+        self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
+        self.root_timer = threading.Timer(paras.SIMULATOR_TIME, self.simulate_time_out)
+        self.root_timer.start()
 
     def enter_state_idle(self):
-
-        self.timer_req = threading.Timer(self.get_exp(const.REQ_EXP_VALUE), self.fun_timer)
+        self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
         self.timer_req.start()
 
     def exit_state_idle(self):
         self.timer_req.cancel()
 
-
     def enter_state_pending_req(self):
         # 重设定时器
-        self.timer_req_timeout = threading.Timer(const.REQ_TIME_OUT, self.fun_pending_req_timeout)
+        self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
         self.timer_req_timeout.start()
 
     def exit_state_pending_req(self):
@@ -100,9 +99,10 @@ class Node(object):
 
     def enter_state_taken(self):
         # 获得发言权
-        self.client_socket.send(str(signal.FLOOR_TAKEN))
+        if self.client_socket is not None and self.isRunning == True:
+            self.client_socket.send(str(signal.FLOOR_TAKEN))
         global timer_speak_timeout
-        timer_speak_timeout = threading.Timer(const.TANKEN_TIME, self.fun_taken_time_timeout)
+        timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
         timer_speak_timeout.start()
 
     def exit_state_taken(self):
@@ -121,30 +121,29 @@ class Node(object):
         pass
 
     def stop(self):
-        self.isruning = False
+        self.isRunning = False
         self.client_socket.close()
 
     def recv(self):
-        while (self.isruning == True):
+        while (self.isRunning == True):
             try:
                 data = self.client_socket.recv(1000)
                 self.parse_signal(data)
-            except socket.timeout as evb:
-                print "socket time out"
+            except:
                 self.stop()
 
-    def fun_timer(self):
+    def fun_random_req_timer(self):
         # simulator time: 100s
         # 用于限制时间
-        if time.time() - self.start_time < 500 and self.isruning is True:
-
+        if self.isRunning is True:
             self.action_ptt_down()
-        else:
-            self.stop()
+        # if time.time() - self.start_time < final.simulator_time and self.isRunning is True:
+        #     self.action_ptt_down()
+        # else:
+        #     self.stop()
 
     # 申请发言权超时，认为自己得到发言权
     def fun_pending_req_timeout(self):
-        Logger().do().info('send ' +'timeeeeout fuckkkk')
 
         if cmp(self.state, "state_pending_req") == 0:
             self.function_request_timeout()
@@ -155,8 +154,10 @@ class Node(object):
 
         if cmp(self.state, "state_taken") == 0:
             self.action_ptt_up()
-            Logger().do().info('send ' + str(self.name) + " " + str(signal.FLOOR_RELEASE))
-            self.client_socket.send(str(signal.FLOOR_RELEASE))
+            if self.client_socket is not None and self.isRunning == True:
+
+                Logger().do().info('send ' + str(self.name) + " " + str(signal.FLOOR_RELEASE))
+                self.client_socket.send(str(signal.FLOOR_RELEASE))
 
     def get_exp(self, v):
         return random.expovariate(v)
@@ -165,13 +166,11 @@ class Node(object):
         # 如果是系统是空闲状态，就进入按下ptt流程
         if cmp(self.state, "state_idle") == 0:
             Logger().do().info('send ' + str(self.name) + " " + str(signal.FLOOR_REQUEST))
-            self.client_socket.send(str(signal.FLOOR_REQUEST))
-            self.function_ptt_down()
+            if self.client_socket is not None:
+                self.client_socket.send(str(signal.FLOOR_REQUEST))
+                self.function_ptt_down()
     def action_ptt_up(self):
         self.function_ptt_up()
-
-    def function_request_timeout(self):
-        pass
 
     def parse_signal(self, data):
 
@@ -182,12 +181,18 @@ class Node(object):
                 self.function_recv_req()
             elif cmp(self.state, "state_pending_req") == 0:
                 #发送deny
-                self.client_socket.send(str(signal.FLOOR_DENY))
+                if self.client_socket is not None:
+
+                    self.client_socket.send(str(signal.FLOOR_DENY))
             elif cmp(self.state, "state_taken") == 0:
                 # 发送deny
-                self.client_socket.send(str(signal.FLOOR_DENY))
+                if self.client_socket is not None:
+
+                    self.client_socket.send(str(signal.FLOOR_DENY))
             elif cmp(self.state, "state_granted") == 0:
-                self.client_socket.send(str(signal.FLOOR_DENY))
+                if self.client_socket is not None:
+
+                    self.client_socket.send(str(signal.FLOOR_DENY))
             elif cmp(self.state, "state_pend_req") == 0:
                 pass
         if (data) == signal.FLOOR_TAKEN:
@@ -229,3 +234,14 @@ class Node(object):
                 self.function_recv_release()
             elif cmp(self.state, "state_pend_req") == 0:
                 pass
+
+    def simulate_time_out(self):
+        #停止所有计时器
+        self.isRunning = False
+        self.timer_req.cancel()
+        self.timer_req_timeout.cancel()
+        self.client_socket.send('exit')
+        self.client_socket.close()
+        self.client_socket = None
+
+
