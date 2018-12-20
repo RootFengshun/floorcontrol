@@ -5,9 +5,13 @@ class final:
     SERVER_PORT = 50000
 class paras:
 
-    SIMULATOR_TIME = 15
-    NODE_NUMBER = 1
+    RETRY_OPEN = True
+
+    SIMULATOR_TIME = 150
+    NODE_NUMBER = 5
 
     REQ_TIME_OUT = 5
     REQ_EXP_VALUE = 1
     TANKEN_TIME = 2
+
+    NETWORK_DELAY = 2

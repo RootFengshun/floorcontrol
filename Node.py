@@ -10,6 +10,7 @@ from Signal import signal
 from transitions import Machine
 from LogUtils import Logger
 import random
+import math
 
 
 class Node(object):
@@ -39,8 +40,25 @@ class Node(object):
         self.start_time = time.time()
         self.isRunning = True
 
+        #### 初始化定时器####
+        # 随机发起
+        self.timer_req =  threading.Timer(1, self.fun_random_req_timer)
+        # 发起等待
+        self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
+        # 讲话时间
+        self.timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
+        self.root_timer = threading.Timer(paras.SIMULATOR_TIME, self.simulate_time_out)
+        self.root_timer.start()
+        # 用于统计
+        self.count_req_number = 0
+        self.count_taken_number = 0
+        self.count_req_period_list = []
+        self.count_req_time = 0
+        # 退避标志
+        self.count_retreat = 0
+
         # 启动接收线程
-        node_recv_thread = threading.Thread(target=self.recv, name='node_recv'+str(name))
+        node_recv_thread = threading.Thread(target=self.recv, name='node_recv' + str(name))
         node_recv_thread.start()
 
         self.states = ['state_idle', 'state_pending_req', 'state_taken', 'state_granted', 'state_pend_req']
@@ -68,24 +86,13 @@ class Node(object):
         self.stateMachine = Machine(model=self, states=self.states, transitions=self.transitions, initial='state_idle')
         self.enter_state_idle()
 
-        #### 初始化定时器####
-        # 随机发起
-        self.timer_req =  threading.Timer(1, self.fun_random_req_timer)
-        # 发起等待
-        self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
-        # 讲话时间
-        self.timer_speak_timeout = threading.Timer(paras.TANKEN_TIME, self.fun_taken_time_timeout)
-        self.root_timer = threading.Timer(paras.SIMULATOR_TIME, self.simulate_time_out)
-        self.root_timer.start()
-
-        self.count_req_number = 0
-        self.count_taken_number = 0
-        self.count_req_period_list = []
-        self.count_req_time = 0
-
     def enter_state_idle(self):
-        self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
-        self.timer_req.start()
+        print self.name
+        if self.count_retreat == 0 or paras.RETRY_OPEN is False:
+            self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
+            self.timer_req.start()
+        else:
+            self.timer_req = threading.Timer(self.get_retreat_time(), self.action_ptt_down)
 
     def exit_state_idle(self):
         self.timer_req.cancel()
@@ -114,6 +121,7 @@ class Node(object):
         self.timer_speak_timeout.start()
         self.count_taken_number = self.count_taken_number+1
         self.count_req_period_list.append(time.time() - self.count_req_time)
+        self.count_retreat = 0
 
     def exit_state_taken(self):
         pass
@@ -170,6 +178,8 @@ class Node(object):
 
     def action_ptt_down(self):
         # 如果是系统是空闲状态，就进入按下ptt流程
+        if self.isRunning is False:
+            return
         if cmp(self.state, "state_idle") == 0:
             Logger().do().info('send ' + str(self.name) + " " + str(signal.FLOOR_REQUEST))
             if self.client_socket is not None:
@@ -222,6 +232,7 @@ class Node(object):
                 pass
             elif cmp(self.state, "state_pending_req") == 0:
                 self.function_recv_deny()
+                self.count_retreat +=1
             elif cmp(self.state, "state_taken") == 0:
                 pass
             elif cmp(self.state, "state_granted") == 0:
@@ -254,4 +265,6 @@ class Node(object):
         Logger().do().info(self.count_req_number)
         Logger().do().info(self.count_taken_number)
         Logger().do().info(self.count_req_period_list)
+    def get_retreat_time(self):
+        return paras.NETWORK_DELAY * random.uniform(0, math.pow(2, self.count_retreat))
 

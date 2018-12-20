@@ -46,9 +46,8 @@ def tcplink(sock):
         data = sock.recv(1024)
         if not data or data.decode('utf-8') == 'exit':
             break
-        relay_delay = threading.Timer(2, relay, [data, sock])
+        relay_delay = threading.Timer(paras.NETWORK_DELAY, relay, [data, sock])
         relay_delay.start()
-    # socket_list.remove(sock)
     sock.close()
 
 
