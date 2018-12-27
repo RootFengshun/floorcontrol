@@ -5,7 +5,7 @@ class final:
     SERVER_PORT = 50000
 class paras:
 
-    RETRY_OPEN = True
+    RETRY_OPEN = False
 
     SIMULATOR_TIME = 150
     NODE_NUMBER = 5

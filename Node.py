@@ -55,7 +55,12 @@ class Node(object):
         self.count_req_period_list = []
         self.count_req_time = 0
         # 退避标志
+        #　当前退避次数
         self.count_retreat = 0
+        # 退避时间
+        self.retreat_time = 0
+        # 退避开始时间
+        self.retreat_start_time = 0
 
         # 启动接收线程
         node_recv_thread = threading.Thread(target=self.recv, name='node_recv' + str(name))
@@ -87,22 +92,48 @@ class Node(object):
         self.enter_state_idle()
 
     def enter_state_idle(self):
-        print self.name
-        if self.count_retreat == 0 or paras.RETRY_OPEN is False:
+        '''there are 3 situations entering idle_state
+        1,normal state, just finish a call process
+        2,deny state, just got deny, maybe the first time or the 999th time
+        3,retreat process.
+        '''
+        if paras.RETRY_OPEN is True:
+            if self.retreat_time > 0:
+                self.timer_req = threading.Timer(self.retreat_time, self.fun_random_req_timer)
+                self.retreat_start_time = time.time()
+                self.timer_req.start()
+            else:
+                self.retreat_time = self.get_retreat_time()
+                self.timer_req = threading.Timer(self.retreat_time, self.fun_random_req_timer)
+                self.retreat_start_time = time.time()
+                self.timer_req.start()
+        else:
             self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
             self.timer_req.start()
-        else:
-            self.timer_req = threading.Timer(self.get_retreat_time(), self.action_ptt_down)
+
 
     def exit_state_idle(self):
         self.timer_req.cancel()
+        # 退避结束
+        if paras.RETRY_OPEN is False:
+            return
+        if self.count_retreat == 0:
+            self.count_req_time = time.time()
+        if time.time() - self.retreat_start_time >= self.retreat_time:
+            self.retreat_time = 0
+        else:
+            #记录下次退避时间
+            self.retreat_time = self.retreat_time - (time.time() - self.retreat_start_time)
 
     def enter_state_pending_req(self):
         # 重设定时器
         self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
         self.timer_req_timeout.start()
         self.count_req_number = self.count_req_number + 1
-        self.count_req_time = time.time()
+
+        #计时
+
+
 
     def exit_state_pending_req(self):
         # 清空pending_req计时器
@@ -153,7 +184,7 @@ class Node(object):
     def fun_random_req_timer(self):
         # simulator time: 100s
         # 用于限制时间
-        if self.isRunning is True:
+        if self.isRunning is True and  cmp(self.state, "state_idle") == 0:
             self.action_ptt_down()
 
     # 申请发言权超时，认为自己得到发言权
@@ -232,7 +263,8 @@ class Node(object):
                 pass
             elif cmp(self.state, "state_pending_req") == 0:
                 self.function_recv_deny()
-                self.count_retreat +=1
+                if paras.RETRY_OPEN is True:
+                    self.count_retreat += 1
             elif cmp(self.state, "state_taken") == 0:
                 pass
             elif cmp(self.state, "state_granted") == 0:
@@ -262,9 +294,9 @@ class Node(object):
         self.client_socket = None
         # 回写数据
         Logger().do().info('data')
-        Logger().do().info(self.count_req_number)
-        Logger().do().info(self.count_taken_number)
-        Logger().do().info(self.count_req_period_list)
+        Logger().do().info(str(self.count_req_number)+' '+str(self.name))
+        Logger().do().info(str(self.count_taken_number)+' '+str(self.name))
+        Logger().do().info(str(self.count_req_period_list)+' '+str(self.name))
     def get_retreat_time(self):
         return paras.NETWORK_DELAY * random.uniform(0, math.pow(2, self.count_retreat))
 

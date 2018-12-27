@@ -3,9 +3,9 @@ import threading
 import time
 from GlobalSetting import paras
 
+
 import NodeManager
 import Server
-
 
 def start_server():
     Server.main()
@@ -22,3 +22,6 @@ if __name__ == '__main__':
     t2 = threading.Thread(target=start_node_manaager, name='NodeManagerThread')
     t2.start()
     time.sleep(paras.SIMULATOR_TIME + 5)
+
+
+
