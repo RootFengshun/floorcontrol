@@ -114,11 +114,11 @@ class Node(object):
 
     def exit_state_idle(self):
         self.timer_req.cancel()
+        if self.count_retreat == 0:
+            self.count_req_time = time.time()
         # 退避结束
         if paras.RETRY_OPEN is False:
             return
-        if self.count_retreat == 0:
-            self.count_req_time = time.time()
         if time.time() - self.retreat_start_time >= self.retreat_time:
             self.retreat_time = 0
         else:
