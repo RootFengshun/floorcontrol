@@ -12,7 +12,6 @@ start_time = time.time()
 
 def recv_signal():
     start_time = time.time()
-    socket_list = set()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 定义socket类型，网络通信，TCP
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     addr = (final.HOST, final.SERVER_PORT)
@@ -28,6 +27,7 @@ def recv_signal():
             socket_list.add(sock)
             # 创建新线程来处理TCP连接:
             t = threading.Thread(target=tcplink, args=(sock, ), name='server_thread_' + str(i))
+            Logger().do().info('server_thread_')
             t.start()
     except:
         server_socket = None
@@ -36,7 +36,7 @@ def recv_signal():
 def relay(data, selfSocket):
     for socket in socket_list:
 
-        if (socket == selfSocket):
+        if (socket == selfSocket or  socket is None):
             continue
         socket.send(data)
 
@@ -49,6 +49,7 @@ def tcplink(sock):
         relay_delay = threading.Timer(paras.NETWORK_DELAY, relay, [data, sock])
         relay_delay.start()
     sock.close()
+    socket_list.remove(sock)
 
 
 
