@@ -298,7 +298,9 @@ class Node(object):
         Logger().do().info(str(self.count_taken_number)+' '+str(self.name))
         Logger().do().info(str(self.count_req_period_list)+' '+str(self.name))
     def get_retreat_time(self):
+        #  merger
         tmp =  paras.NETWORK_DELAY * random.uniform(0, math.pow(2, self.count_retreat))
         print self.count_retreat, tmp
         return tmp
+
 
