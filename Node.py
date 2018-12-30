@@ -30,9 +30,10 @@ class Node(object):
         ## socket初始化##
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.client_socket.settimeout(10)
         try:
             self.client_socket.connect((final.HOST, final.SERVER_PORT))
-            self.client_socket.settimeout(200)
+            # self.client_socket.settimeout(200)
 
         except:
             print 'error'
@@ -117,6 +118,7 @@ class Node(object):
         self.timer_req.cancel()
         if self.count_retreat == 0:
             self.count_req_timestamp = time.time()
+            self.count_req_number += 1
             return
         if time.time() - self.retreat_start_timestamp >= self.retreat_period:
             self.retreat_period = 0
@@ -175,8 +177,6 @@ class Node(object):
                 data = self.client_socket.recv(1000)
                 self.parse_signal(data)
             except:
-                Logger().do().info('sssssssssssssssssss')
-
                 self.stop()
 
     def fun_random_req_timer(self):
@@ -218,7 +218,7 @@ class Node(object):
         self.function_ptt_up()
 
     def parse_signal(self, data):
-        Logger().do().info('RECV '+str(self.name) +' '+data)
+        # Logger().do().info('RECV '+str(self.name) +' '+data)
         if (data) == signal.FLOOR_REQUEST:
             # 收到别人的请求
             if cmp(self.state, "state_idle") == 0:
@@ -229,7 +229,7 @@ class Node(object):
                 if self.client_socket is not None:
                     self.client_socket.send(str(signal.FLOOR_DENY))
                 else:
-                    Logger().do().info('ffffffffffffff')
+                    pass
 
             elif cmp(self.state, "state_taken") == 0:
                 # 发送deny
@@ -289,18 +289,18 @@ class Node(object):
         self.isRunning = False
         self.timer_req.cancel()
         self.timer_req_timeout.cancel()
-        self.client_socket.send('exit')
-        self.client_socket.close()
-        self.client_socket = None
+        if self.client_socket is None == False:
+            self.client_socket.send('exit')
+            self.client_socket.close()
+            self.client_socket = None
         # 回写数据
-        Logger().do().info('data')
-        Logger().do().info(str(self.count_req_number)+' '+str(self.name))
-        Logger().do().info(str(self.count_taken_number)+' '+str(self.name))
+        # Logger().do().info('data')
+        Logger().do().info(str(self.name)+' '+str(self.count_req_number)+' '+str(self.count_taken_number))
         Logger().do().info(str(self.count_req_period_list)+' '+str(self.name))
     def get_retreat_time(self):
         #  merger
         tmp =  paras.NETWORK_DELAY * random.uniform(0, math.pow(2, self.count_retreat))
-        print self.count_retreat, tmp
+        Logger().do().info('retreat ' +str(self.name) + ' '+str(self.count_retreat)+ ' '+str(tmp))
         return tmp
 
 

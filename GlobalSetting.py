@@ -7,10 +7,10 @@ class paras:
 
     RETRY_OPEN = True
 
-    SIMULATOR_TIME = 80
+    SIMULATOR_TIME = 30
     NODE_NUMBER = 20
 
-    REQ_TIME_OUT = 10
+    REQ_TIME_OUT = 5
     REQ_EXP_VALUE = 0.01
     TANKEN_TIME = 2
 

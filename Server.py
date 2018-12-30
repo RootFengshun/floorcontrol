@@ -27,7 +27,6 @@ def recv_signal():
             socket_list.add(sock)
             # 创建新线程来处理TCP连接:
             t = threading.Thread(target=tcplink, args=(sock, ), name='server_thread_' + str(i))
-            Logger().do().info('server_thread_')
             t.start()
     except:
         server_socket = None
@@ -42,12 +41,15 @@ def relay(data, selfSocket):
 
 
 def tcplink(sock):
-    while True:
-        data = sock.recv(1024)
-        if not data or data.decode('utf-8') == 'exit':
-            break
-        relay_delay = threading.Timer(paras.NETWORK_DELAY, relay, [data, sock])
-        relay_delay.start()
+    try:
+        while True:
+            data = sock.recv(1024)
+            if not data or data.decode('utf-8') == 'exit':
+                break
+            relay_delay = threading.Timer(paras.NETWORK_DELAY, relay, [data, sock])
+            relay_delay.start()
+    except:
+        pass
     sock.close()
     socket_list.remove(sock)
 
