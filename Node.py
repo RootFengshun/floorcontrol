@@ -30,7 +30,7 @@ class Node(object):
         ## socket初始化##
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.client_socket.settimeout(10)
+        self.client_socket.settimeout(2)
         try:
             self.client_socket.connect((final.HOST, final.SERVER_PORT))
             # self.client_socket.settimeout(200)
@@ -177,11 +177,13 @@ class Node(object):
                 data = self.client_socket.recv(1000)
                 self.parse_signal(data)
             except:
-                self.stop()
+                pass
+
 
     def fun_random_req_timer(self):
         # simulator time: 100s
         # 用于限制时间
+        print self.isRunning
         if self.isRunning is True and  cmp(self.state, "state_idle") == 0:
             self.action_ptt_down()
 
@@ -203,7 +205,8 @@ class Node(object):
                 self.client_socket.send(str(signal.FLOOR_RELEASE))
 
     def get_exp(self, v):
-        return random.expovariate(v)
+        tmp = random.expovariate(v)
+        return tmp
 
     def action_ptt_down(self):
         # 如果是系统是空闲状态，就进入按下ptt流程
@@ -289,7 +292,7 @@ class Node(object):
         self.isRunning = False
         self.timer_req.cancel()
         self.timer_req_timeout.cancel()
-        if self.client_socket is None == False:
+        if self.client_socket is not None:
             self.client_socket.send('exit')
             self.client_socket.close()
             self.client_socket = None
