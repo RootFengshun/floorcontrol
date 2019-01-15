@@ -7,7 +7,7 @@ from GlobalSetting import paras
 from LogUtils import Logger
 
 
-socket_list = set()
+socket_list = dict()
 start_time = time.time()
 
 def recv_signal():
@@ -24,7 +24,7 @@ def recv_signal():
         for i in range(paras.NODE_NUMBER):
 
             sock, addr = server_socket.accept()
-            socket_list.add(sock)
+            socket_list[sock] = 1
             # 创建新线程来处理TCP连接:
             t = threading.Thread(target=tcplink, args=(sock, ), name='server_thread_' + str(i))
             t.start()
@@ -34,8 +34,7 @@ def recv_signal():
 
 def relay(data, selfSocket):
     for socket in socket_list:
-
-        if (socket == selfSocket or  socket is None):
+        if (socket == selfSocket or socket_list[socket] == 0):
             continue
         socket.send(data)
 
@@ -51,7 +50,8 @@ def tcplink(sock):
     except:
         pass
     sock.close()
-    socket_list.remove(sock)
+    socket_list[sock] = 0
+    # socket_list.remove(sock)
 
 
 

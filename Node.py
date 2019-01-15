@@ -9,6 +9,7 @@ from GlobalSetting import final
 from Signal import signal
 from transitions import Machine
 from LogUtils import Logger
+from data import data
 import random
 import math
 
@@ -21,6 +22,8 @@ class Node(object):
     state granted: 发言权授予其他人
     state pend req : 其他人正在申请
     '''
+    count_all_req=0
+    count_all_taken = 0
 
 
 
@@ -85,6 +88,8 @@ class Node(object):
              'before': 'exit_state_granted', 'after': 'enter_state_idle'},  # 收到其他终端的release
             {'trigger': 'function_recv_deny', 'source': 'state_pending_req', 'dest': 'state_idle',
              'before': 'exit_state_pending_req', 'after': 'enter_state_idle'},  # 收到其他终端的deny
+            {'trigger': 'function_recv_deny', 'source': 'state_pend_req', 'dest': 'state_idle',
+             'before': 'exit_state_pend_req', 'after': 'enter_state_idle'},  # 其他终端req失败
             {'trigger': 'function_recv_release', 'source': 'state_taken', 'dest': 'state_idle',
              'before': 'exit_state_taken', 'after': 'enter_state_idle'}  # 收到其他终端的release
         ]
@@ -118,7 +123,6 @@ class Node(object):
         self.timer_req.cancel()
         if self.count_retreat == 0:
             self.count_req_timestamp = time.time()
-            self.count_req_number += 1
             return
         if time.time() - self.retreat_start_timestamp >= self.retreat_period:
             self.retreat_period = 0
@@ -127,6 +131,8 @@ class Node(object):
             self.retreat_period = self.retreat_period - (time.time() - self.retreat_start_timestamp)
 
     def enter_state_pending_req(self):
+        if self.count_retreat == 0:
+            self.count_req_number += 1
         # 重设定时器
         self.timer_req_timeout = threading.Timer(paras.REQ_TIME_OUT, self.fun_pending_req_timeout)
         self.timer_req_timeout.start()
@@ -183,7 +189,6 @@ class Node(object):
     def fun_random_req_timer(self):
         # simulator time: 100s
         # 用于限制时间
-        print self.isRunning
         if self.isRunning is True and  cmp(self.state, "state_idle") == 0:
             self.action_ptt_down()
 
@@ -273,7 +278,7 @@ class Node(object):
             elif cmp(self.state, "state_granted") == 0:
                 pass
             elif cmp(self.state, "state_pend_req") == 0:
-                pass
+                self.function_recv_deny()
         if (data) == signal.FLOOR_RELEASE:
             if cmp(self.state, "state_idle") == 0:
                 pass
@@ -300,10 +305,13 @@ class Node(object):
         # Logger().do().info('data')
         Logger().do().info(str(self.name)+' '+str(self.count_req_number)+' '+str(self.count_taken_number))
         Logger().do().info(str(self.count_req_period_list)+' '+str(self.name))
+        Node.count_all_req += self.count_req_number
+        Node.count_all_taken +=self.count_taken_number
     def get_retreat_time(self):
         #  merger
-        tmp =  paras.NETWORK_DELAY * random.uniform(0, math.pow(2, self.count_retreat))
+        tmp =  paras.NETWORK_DELAY * random.uniform(0, data.cw[0.02][paras.NODE_NUMBER])
         Logger().do().info('retreat ' +str(self.name) + ' '+str(self.count_retreat)+ ' '+str(tmp))
         return tmp
+
 
 

@@ -3,6 +3,7 @@ import threading
 import time
 from GlobalSetting import paras
 from LogUtils import Logger
+from Node import Node
 
 
 import NodeManager
@@ -21,86 +22,18 @@ def asumilation():
     time.sleep(1)
     t2 = threading.Thread(target=start_node_manaager, name='NodeManagerThread')
     t2.start()
-    time.sleep(paras.SIMULATOR_TIME + 5)
+    time.sleep(paras.SIMULATOR_TIME + 10)
+    Logger().do().info('req :'+str(Node.count_all_req) + ' taken: '+str(Node.count_all_taken))
+    Node.count_all_taken = 0
+    Node.count_all_req=0
+
 
 if __name__ == '__main__':
-    paras.SIMULATOR_TIME = 300
-    paras.RETRY_OPEN = False
-    paras.REQ_EXP_VALUE=0.1
-    paras.NODE_NUMBER = 5
+
+    paras.SIMULATOR_TIME = 60
+
+    paras.REQ_EXP_VALUE = 0.2
+    paras.NODE_NUMBER = 32
     asumilation()
-
-    paras.REQ_EXP_VALUE=0.1
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.1
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 5
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 5
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-    paras.RETRY_OPEN = True
-
-    paras.REQ_EXP_VALUE = 0.1
-    paras.NODE_NUMBER = 5
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.1
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.1
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 5
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.05
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 5
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 10
-    asumilation()
-
-    paras.REQ_EXP_VALUE = 0.01
-    paras.NODE_NUMBER = 20
-    asumilation()
-
-
-
 
 
