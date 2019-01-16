@@ -90,8 +90,8 @@ class Node(object):
              'before': 'exit_state_pending_req', 'after': 'enter_state_idle'},  # 收到其他终端的deny
             {'trigger': 'function_recv_deny', 'source': 'state_pend_req', 'dest': 'state_idle',
              'before': 'exit_state_pend_req', 'after': 'enter_state_idle'},  # 其他终端req失败
-            {'trigger': 'function_recv_release', 'source': 'state_taken', 'dest': 'state_idle',
-             'before': 'exit_state_taken', 'after': 'enter_state_idle'}  # 收到其他终端的release
+            {'trigger': 'function_recv_release', 'source': 'state_pend_req', 'dest': 'state_idle',
+             'before': 'exit_state_pend_req', 'after': 'enter_state_idle'}  # 收到其他终端的release
         ]
         self.state = 'state_idle'
         self.stateMachine = Machine(model=self, states=self.states, transitions=self.transitions, initial='state_idle')
@@ -226,7 +226,6 @@ class Node(object):
         self.function_ptt_up()
 
     def parse_signal(self, data):
-        # Logger().do().info('RECV '+str(self.name) +' '+data)
         if (data) == signal.FLOOR_REQUEST:
             # 收到别人的请求
             if cmp(self.state, "state_idle") == 0:
@@ -272,6 +271,8 @@ class Node(object):
                 if paras.RETRY_OPEN is True:
                     self.count_retreat += 1
                 self.function_recv_deny()
+                # 发送release
+                self.client_socket.send(signal.FLOOR_RELEASE)
 
             elif cmp(self.state, "state_taken") == 0:
                 pass
@@ -285,12 +286,12 @@ class Node(object):
             elif cmp(self.state, "state_pending_req") == 0:
                 # 执行退避算法
                 pass
-            elif cmp(self.state, "state_taken") == 0:
-                self.function_recv_release()
             elif cmp(self.state, "state_granted") == 0:
                 self.function_recv_release()
             elif cmp(self.state, "state_pend_req") == 0:
-                pass
+                #回到idle
+                self.function_recv_release()
+
 
     def simulate_time_out(self):
         #停止所有计时器

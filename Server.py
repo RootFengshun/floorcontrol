@@ -51,7 +51,6 @@ def tcplink(sock):
         pass
     sock.close()
     socket_list[sock] = 0
-    # socket_list.remove(sock)
 
 
 
