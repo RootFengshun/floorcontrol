@@ -110,6 +110,13 @@ class Node(object):
                 self.retreat_start_timestamp = time.time()
                 self.timer_req.start()
             else:
+                if time.time() - self.count_req_timestamp > 20:
+                    print time.time(), self.count_req_timestamp
+                    self.count_retreat = 0
+                    self.retreat_period = 0
+                    self.timer_req = threading.Timer(self.get_exp(paras.REQ_EXP_VALUE), self.fun_random_req_timer)
+                    self.timer_req.start()
+                    return
                 self.retreat_period = self.get_retreat_time()
                 self.timer_req = threading.Timer(self.retreat_period, self.fun_random_req_timer)
                 self.retreat_start_timestamp = time.time()
@@ -226,6 +233,7 @@ class Node(object):
         self.function_ptt_up()
 
     def parse_signal(self, data):
+        # Logger().do().info('recv '+data)
         if (data) == signal.FLOOR_REQUEST:
             # 收到别人的请求
             if cmp(self.state, "state_idle") == 0:
@@ -270,9 +278,11 @@ class Node(object):
             elif cmp(self.state, "state_pending_req") == 0:
                 if paras.RETRY_OPEN is True:
                     self.count_retreat += 1
-                self.function_recv_deny()
+
                 # 发送release
+                Logger().do().info('sendddd floor release')
                 self.client_socket.send(signal.FLOOR_RELEASE)
+                self.function_recv_deny()
 
             elif cmp(self.state, "state_taken") == 0:
                 pass
@@ -309,10 +319,10 @@ class Node(object):
         Node.count_all_req += self.count_req_number
         Node.count_all_taken +=self.count_taken_number
     def get_retreat_time(self):
-        #  merger
-        tmp =  paras.NETWORK_DELAY * random.uniform(0, data.cw[0.02][paras.NODE_NUMBER])
+
+        win = math.pow(2, self.count_retreat) > data.cw[0.02][paras.NODE_NUMBER] and math.pow(2, self.count_retreat) or data.cw[0.02][paras.NODE_NUMBER]
+        if paras.BACKOFF_METHOD == 0:
+            win =  math.pow(2, self.count_retreat)
+        tmp =  paras.NETWORK_DELAY * random.uniform(0,win)
         Logger().do().info('retreat ' +str(self.name) + ' '+str(self.count_retreat)+ ' '+str(tmp))
         return tmp
-
-
-
