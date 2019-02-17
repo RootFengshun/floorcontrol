@@ -1,4 +1,15 @@
 
+import GlobalSetting
+class const(object):
+    state_idle =0
+    state_pending_req=0
+    state_taken=0
+    state_pend_req=0
+    state_granted=0
+
+
+
+
 class final:
 
     HOST = '127.0.0.1'

@@ -62,11 +62,11 @@ class State(object):
         self.signals[signalType] = callback
 
     def enter(self):
-        # print("Entry State %s" % (self.name))
+        print("Entry State %s" % (self.name))
         pass
 
     def leave(self):
-        # print("Leave State %s" % (self.name))
+        print("Leave State %s" % (self.name))
         pass
 
     def do(self, signal):
@@ -113,6 +113,11 @@ class Grant(State):
         State.__init__(self, "grant")
         self.register(Work, self.workCallback)
         self.register(Quit, self.quitCallback)
+    def enter(self):
+        State.enter(self)
+        print('hhhh')
+
+
 
     def workCallback(self, data):
         self.machine.transfer("busy")
@@ -137,7 +142,7 @@ sm.addState(Busy())
 sm.setDefault("idle")
 sm.start()
 
-signals = [Auth({}), Work(), Sleep(), Work(), Sleep(), Quit(), Auth({}), Work(), Sleep(), Quit()]
+signals = [Auth({}), Work(), Sleep(), Quit()]
 
 print 'hello'
 start = time.time()
