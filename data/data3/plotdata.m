@@ -8,11 +8,11 @@ hold on
 plot(num,text(2,:),'g')
 hold on
 plot(num,text(3,:),'b')
-legend('n=5','n=10','n=15','n=20','n=25')
+legend('No Backoff','BEB Backoff','Adaptive Backoff')
 xlabel('number of nodes')
 ylabel('Wc')
 axis([5 25 0.0 1.2])
-figure(1)
+
 
 
 clear all
