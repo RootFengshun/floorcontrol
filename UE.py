@@ -86,11 +86,13 @@ class State(object):
 
     def enter(self):
         pass
-        # print("Enter State %s %d" % (self.name, self.id))
+        # Logger().do().info("Enter State %s %d" % (self.name, self.id))
+
 
     def leave(self):
-        # print("Leave State %s %d" % (self.name,self.id))
         pass
+        # Logger().do().info("Leave State %s %d" % (self.name, self.id))
+
 
     def do(self, signal):
         pass
@@ -105,8 +107,6 @@ class Idle(State):
 
     def enter(self):
         State.enter(self)
-        self.recv_other_req = False
-        self.recv_other_req_event = self.env.event()
 
         '''there are 3 situations entering idle_state
         1,normal state, just finish a call process
@@ -117,25 +117,25 @@ class Idle(State):
         if self.machine.nodeHandler.count_retreat > 0:
             if self.machine.nodeHandler.retreat_period > 0:
                 self.machine.nodeHandler.retreat_start_timestamp = self.env.now
-                self.env.process(self.req_timer(self.machine.nodeHandler.retreat_period))
+                self.req_timer_proc = self.env.process(self.req_timer(self.machine.nodeHandler.retreat_period))
             else:
-                if self.env.now - self.machine.nodeHandler.count_req_timestamp > 100:
+                if self.env.now - self.machine.nodeHandler.count_req_timestamp > 20:
                     self.machine.nodeHandler.count_retreat = 0
                     self.machine.nodeHandler.retreat_period = 0
-                    self.env.process(self.req_timer(random.expovariate(paras.REQ_EXP_VALUE)))
+                    self.req_timer_proc = self.env.process(self.req_timer(random.expovariate(paras.REQ_EXP_VALUE)))
                     return
                 self.machine.nodeHandler.retreat_period = self.machine.nodeHandler.get_retreat_time()
                 self.retreat_start_timestamp = self.env.now
-                self.env.process(self.req_timer(self.machine.nodeHandler.retreat_period))
+                self.req_timer_proc = self.env.process(self.req_timer(self.machine.nodeHandler.retreat_period))
         else:
-            self.env.process(self.req_timer(random.expovariate(paras.REQ_EXP_VALUE)))
-
-
+            self.req_timer_proc = self.env.process(self.req_timer(random.expovariate(paras.REQ_EXP_VALUE)))
 
 
     def leave(self):
+        self.env.process(self.interrupting())
         if self.machine.nodeHandler.count_retreat == 0:
             self.machine.nodeHandler.count_req_timestamp = self.env.now
+            State.leave(self)
             return
         if self.env.now - self.machine.nodeHandler.retreat_start_timestamp >= self.machine.nodeHandler.retreat_period:
             self.machine.nodeHandler.retreat_period = 0
@@ -143,15 +143,19 @@ class Idle(State):
             #记录下次退避时间
             self.machine.nodeHandler.retreat_period = self.machine.nodeHandler.retreat_period - (self.env.now - self.machine.nodeHandler.retreat_start_timestamp)
 
-        self.recv_other_req = True
-        self.recv_other_req_event.succeed()
         State.leave(self)
+    def interrupting(self):
+        yield self.env.timeout(0)
+        if not self.req_timer_proc.triggered:
+            self.req_timer_proc.interrupt('hhh')
     def req_timer(self, time):
-        yield self.env.timeout(time)|self.recv_other_req_event
-        if self.recv_other_req == True:
-            return
-        self.machine.transfer("state_pending_req")
 
+        try:
+            yield self.env.timeout(time)
+            self.machine.transfer("state_pending_req")
+        except Exception,e:
+           # print  e
+            pass
 
 class PendingReq(State):
     def __init__(self, id,env):
@@ -164,18 +168,22 @@ class PendingReq(State):
             self.machine.nodeHandler.count_req_number += 1
         Logger().do().info('time@'+str(self.env.now)+'@ send ' + str(self.id) + " " + str(signal.FLOOR_REQUEST))
         send(signal.FLOOR_REQUEST, self.id, self.env)
-        self.recv_other_signal = False
-        self.recv_other_signal_event = self.env.event()
-        self.env.process(self.taken_timer())
+        self.tanken_timer_proc = self.env.process(self.taken_timer())
     def leave(self):
-        self.recv_other_signal = True
-        self.recv_other_signal_event.succeed()
+        self.env.process(self.interrupting())
         State.leave(self)
+
+    def interrupting(self):
+        yield self.env.timeout(0)
+        if not self.tanken_timer_proc.triggered:
+            self.tanken_timer_proc.interrupt('hhh')
     def taken_timer(self):
-        yield self.env.timeout(paras.REQ_TIME_OUT)|self.recv_other_signal_event
-        if self.recv_other_signal == True:
-            return
-        self.machine.transfer("state_taken")
+        try:
+            yield self.env.timeout(paras.REQ_TIME_OUT)
+            self.machine.transfer("state_taken")
+        except Exception, e:
+            # print e
+            pass
 
 
 class Granted(State):
@@ -201,6 +209,13 @@ class Taken(State):
 class PendReq(State):
     def __init__(self,id,env):
         State.__init__(self, "state_pend_req",id,env)
+
+
+'''node''''''node''''''node''''''node''''''node''''''node'''
+'''node''''''node''''''node''''''node''''''node''''''node'''
+'''node''''''node''''''node''''''node''''''node''''''node'''
+'''node''''''node''''''node''''''node''''''node''''''node'''
+'''node''''''node''''''node''''''node''''''node''''''node'''
 
 
 
@@ -248,12 +263,12 @@ class Node:
         # 退避开始时间
         self.retreat_start_timestamp = 0
 
-        self.timer_speak_timeout = threading.Timer(60, self.simulate_time_out)
-        self.timer_speak_timeout.start()
+        # self.timer_speak_timeout = threading.Timer(60, self.simulate_time_out)
+        # self.timer_speak_timeout.start()
     def test(self):
         self.sm.transfer("state_idle")
 
-        yield self.env.timeout(5)
+        yield self.env.timeout(0)
 
     def get_retreat_time(self):
 
@@ -268,11 +283,10 @@ class Node:
 
 
     def recv_process(self):
-        yield self.env.timeout(0.5)
         while(True):
             yield Node.recv_dict[self.name]
             cur_signal = Node.last_signal
-            # print 'receive ',self.name, cur_signal
+            Logger().do().info('recv'+str(self.name) + ' ' + cur_signal)
 
             if cur_signal is None:
                 return
@@ -294,7 +308,7 @@ class Node:
                 if cmp(self.sm.currentState.name, "state_idle") == 0:
                     self.sm.transfer("state_granted")
                 elif cmp(self.sm.currentState.name, "state_pending_req") == 0:
-                    self.sm.transfer("state_taken")
+                    self.sm.transfer("state_granted")
                 elif cmp(self.sm.currentState.name, "state_pend_req") == 0:
                     self.sm.transfer("state_granted")
             if cmp(cur_signal, signal.FLOOR_DENY)==0:
@@ -304,6 +318,7 @@ class Node:
                     # 发送release
                     send(signal.FLOOR_RELEASE, self.name, self.env)
                     self.sm.transfer("state_idle")
+                    # print 'deny'
 
                 elif cmp(self.sm.currentState.name, "state_pend_req") == 0:
                     self.sm.transfer("state_idle")
@@ -338,10 +353,15 @@ def send_process(sig, send_node, env):
         Node.recv_dict[i].succeed()
         Node.recv_dict[i] = env.event()
 def source(env):
-    for i in range(paras.NODE_NUMBER):
+    for i in range(2):
         ev = Node(env,i)
     yield env.timeout(0)
 def main():
     env = simpy.Environment()
     env.process(source(env))
     env.run(until=paras.SIMULATOR_TIME)
+    Logger().do().info('time@' + str(env.now) + 'done')
+
+    Logger().do().info('req :'+str(Node.count_all_req) + ' taken: '+str(Node.count_all_taken))
+    Node.count_all_taken = 0
+    Node.count_all_req=0
