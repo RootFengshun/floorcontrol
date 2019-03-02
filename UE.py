@@ -8,13 +8,11 @@
 import simpy
 from LogUtils import Logger
 import random
-from GlobalSetting import const
 from Signal import signal
-import time
+
 import math
 from GlobalSetting import paras
 from data import data
-import threading
 
 
 
@@ -197,7 +195,7 @@ class Taken(State):
         State.enter(self)
         Logger().do().info('time@'+str(self.env.now)+'@ send ' + str(self.id) + " " + str(signal.FLOOR_TAKEN))
         self.machine.nodeHandler.count_taken_number = self.machine.nodeHandler.count_taken_number+1
-        self.machine.nodeHandler.count_req_period_list.append(time.time() - self.machine.nodeHandler.count_req_timestamp)
+        self.machine.nodeHandler.count_req_period_list.append(self.env.now - self.machine.nodeHandler.count_req_timestamp)
         self.machine.nodeHandler.count_retreat = 0
         send(signal.FLOOR_TAKEN, self.id, self.env)
         self.env.process(self.speak_timer())
@@ -263,8 +261,8 @@ class Node:
         # 退避开始时间
         self.retreat_start_timestamp = 0
 
-        # self.timer_speak_timeout = threading.Timer(60, self.simulate_time_out)
-        # self.timer_speak_timeout.start()
+        self.env.process(self.simulate_time_out())
+
     def test(self):
         self.sm.transfer("state_idle")
 
@@ -274,6 +272,7 @@ class Node:
 
         win = math.pow(2, self.count_retreat) > data.cw[0.02][paras.NODE_NUMBER] and math.pow(2, self.count_retreat) or data.cw[0.02][paras.NODE_NUMBER]
         if paras.BACKOFF_METHOD == 0:
+            # 0 是二进制
             win =  math.pow(2, self.count_retreat)
         tmp =  paras.NETWORK_DELAY * random.uniform(0,win)
         Logger().do().info('retreat ' +str(self.name) + ' '+str(self.count_retreat)+ ' '+str(tmp))
@@ -286,7 +285,7 @@ class Node:
         while(True):
             yield Node.recv_dict[self.name]
             cur_signal = Node.last_signal
-            Logger().do().info('recv'+str(self.name) + ' ' + cur_signal)
+            # Logger().do().info('recv'+str(self.name) + ' ' + cur_signal)
 
             if cur_signal is None:
                 return
@@ -329,11 +328,8 @@ class Node:
                     self.sm.transfer("state_idle")
 
     def simulate_time_out(self):
-        #停止所有计时器
+        yield self.env.timeout(paras.SIMULATOR_TIME-1)
 
-
-        # 回写数据
-        # Logger().do().info('data')
         Logger().do().info(str(self.name)+' '+str(self.count_req_number)+' '+str(self.count_taken_number))
         Logger().do().info(str(self.count_req_period_list)+' '+str(self.name))
         Node.count_all_req += self.count_req_number
@@ -353,14 +349,13 @@ def send_process(sig, send_node, env):
         Node.recv_dict[i].succeed()
         Node.recv_dict[i] = env.event()
 def source(env):
-    for i in range(2):
+    for i in range(paras.NODE_NUMBER):
         ev = Node(env,i)
     yield env.timeout(0)
 def main():
     env = simpy.Environment()
     env.process(source(env))
     env.run(until=paras.SIMULATOR_TIME)
-    Logger().do().info('time@' + str(env.now) + 'done')
 
     Logger().do().info('req :'+str(Node.count_all_req) + ' taken: '+str(Node.count_all_taken))
     Node.count_all_taken = 0

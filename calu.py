@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import re
 def doonfile():
 
-    data = open("data/data3/00.log",'r')
+    data = open("data/data4/22.log",'r')
     lines = data.readlines()
-    newdata = open("data/data3/0.log",'w')
+    newdata = open("data/data4/2.log",'w')
     for line in lines:
-        if line.find("send") >= 0 or line.find("retreat")>=0:
+        if line.find("send") >= 0 or line.find("retreat")>=0 or line.find("time")>=0:
             continue
         else:
             line = line.replace(" - ["," ")
@@ -32,12 +32,16 @@ def draw(path):
             tail = head
             head = i
             time,dropnum = getMeanTime(path, lines, head, tail)
+
             meantimelist.insert(0,time)
             droplist.insert(0,dropnum)
             fairness = getFairness(path, lines,head,tail)
             fairlist.insert(0,fairness)
     ratelist = getRate(lines,droplist)
     data.close()
+    print ratelist
+    print meantimelist
+    print fairlist
     return ratelist, meantimelist, fairlist
 def getMeanTime(path, lines, head, tail):
     drop = 0
@@ -66,7 +70,7 @@ def getMeanTime(path, lines, head, tail):
 
 
 def getRate(lines,droplist):
-    print droplist
+    # print droplist
     ratelist = list()
     i = 0
     for line in lines:
@@ -95,65 +99,38 @@ def getFairness(path, lines, head, tail):
         node = node+1
     return reqsum*reqsum*10000/reqsquaresum/node
 
-
-
-    # xplot =list()
-    # for i in range(len(ti'melist)):
-    #     xplot.append(1)
-    # print len(xplot)
-    # print len(timelist)
-    # plt.scatter(xplot,timelist, s=0.01)
-    # plt.show()
-
+def writeCleanData(n0, n1,n2):
+    file = open("data/data4/plotdata.log", 'w')
+    for t in n0:
+        file.write(str(t))
+        file.write(' ')
+    file.write('\n')
+    for t in n1:
+        file.write(str(t))
+        file.write(' ')
+    file.write('\n')
+    for t in n2:
+        file.write(str(t))
+        file.write(' ')
+    file.write('\n')
+    file.close()
 
 
 
 
 if __name__ == '__main__':
     # doonfile()
-    r0,m0,f0= draw("data/data3/0.log")
-    r1,m1,f1=draw("data/data3/1.log")
-    r2,m2,f2=draw("data/data3/2.log")
-    file =open("data/data3/plotdata.log",'w')
-    for t in r0:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in r1:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in r2:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
 
-    for t in m0:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in m1:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in m2:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
 
-    for t in f0:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in f1:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    for t in f2:
-        file.write(str(t))
-        file.write(' ')
-    file.write('\n')
-    file.close()
+    r0,m0,f0= draw("data/data4/0.log")
+    r1,m1,f1=draw("data/data4/1.log")
+    r2,m2,f2=draw("data/data4/2.log")
+    #
+    # writeCleanData(r0,r1,r2)
+    # writeCleanData(m0, m1, m2)
+    # writeCleanData(f0, f1, f2)
+
+
 
 
 

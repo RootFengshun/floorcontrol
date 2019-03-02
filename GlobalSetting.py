@@ -21,10 +21,10 @@ class paras:
     SIMULATOR_TIME = 30
     NODE_NUMBER = 5
 
-    REQ_TIME_OUT = 1.5
+    REQ_TIME_OUT = 0.3
     REQ_EXP_VALUE = 0.01
-    TANKEN_TIME = 1.5
+    TANKEN_TIME = 3
 
-    NETWORK_DELAY = 0.5
+    NETWORK_DELAY = 0.1
 
     BACKOFF_METHOD = 0
