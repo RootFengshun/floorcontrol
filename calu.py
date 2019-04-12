@@ -5,8 +5,8 @@ import re
 def doonfile():
 
     data = open("data/data4/22.log",'r')
-    lines = data.readlines()
     newdata = open("data/data4/2.log",'w')
+    lines = data.readlines()
     for line in lines:
         if line.find("send") >= 0 or line.find("retreat")>=0 or line.find("time")>=0:
             continue
@@ -37,12 +37,13 @@ def draw(path):
             droplist.insert(0,dropnum)
             fairness = getFairness(path, lines,head,tail)
             fairlist.insert(0,fairness)
-    ratelist = getRate(lines,droplist)
+    ratelist, reqtakennum = getRate(lines,droplist)
     data.close()
-    print ratelist
-    print meantimelist
-    print fairlist
-    return ratelist, meantimelist, fairlist
+    print 'success rate',ratelist
+    print 'mean time' ,meantimelist
+    print 'fair list', fairlist
+    print 'taken num', reqtakennum
+    return ratelist, meantimelist, fairlist,reqtakennum
 def getMeanTime(path, lines, head, tail):
     drop = 0
     sum = 0
@@ -72,6 +73,7 @@ def getMeanTime(path, lines, head, tail):
 def getRate(lines,droplist):
     # print droplist
     ratelist = list()
+    reqtakenlist = list()
     i = 0
     for line in lines:
         if line.find("req") >= 0:
@@ -79,9 +81,11 @@ def getRate(lines,droplist):
             line = line[tup[0]:tup[1]]
             reqtaken = line.split(" taken: ")
             ratelist.append((float(reqtaken[1])-droplist[i])/float(reqtaken[0]))
+            reqtakenlist.append((float(reqtaken[1])-droplist[i]))
+            # print reqtaken
             i+=1
 
-    return ratelist
+    return ratelist,reqtakenlist
 def getFairness(path, lines, head, tail):
     reqsum=0
     reqsquaresum=0
@@ -100,7 +104,7 @@ def getFairness(path, lines, head, tail):
     return reqsum*reqsum*10000/reqsquaresum/node
 
 def writeCleanData(n0, n1,n2):
-    file = open("data/data4/plotdata.log", 'w')
+    file = open("data/data4/plotdata.log", 'a')
     for t in n0:
         file.write(str(t))
         file.write(' ')
@@ -121,14 +125,15 @@ def writeCleanData(n0, n1,n2):
 if __name__ == '__main__':
     # doonfile()
 
-
-    r0,m0,f0= draw("data/data4/0.log")
-    r1,m1,f1=draw("data/data4/1.log")
-    r2,m2,f2=draw("data/data4/2.log")
     #
-    # writeCleanData(r0,r1,r2)
-    # writeCleanData(m0, m1, m2)
-    # writeCleanData(f0, f1, f2)
+    r0,m0,f0,t0= draw("data/data4/0.log")
+    r1,m1,f1,t1=draw("data/data4/1.log")
+    r2,m2,f2,t2=draw("data/data4/2.log")
+
+    writeCleanData(r0,r1,r2)
+    writeCleanData(m0, m1, m2)
+    writeCleanData(f0, f1, f2)
+    writeCleanData(t0, t1, t2)
 
 
 

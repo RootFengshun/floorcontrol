@@ -22,41 +22,55 @@ if __name__ == '__main__':
 
     paras.RETRY_OPEN = False
     paras.BACKOFF_METHOD = 0
-    paras.NODE_NUMBER = 5
-    asumilation()
-    paras.NODE_NUMBER = 10
-    asumilation()
-    paras.NODE_NUMBER = 15
-    asumilation()
-    paras.NODE_NUMBER = 20
-    asumilation()
-    paras.NODE_NUMBER = 25
-    asumilation()
-    #
-    #
-    paras.RETRY_OPEN = True
-    paras.BACKOFF_METHOD = 0
-    paras.NODE_NUMBER = 5
-    asumilation()
-    paras.NODE_NUMBER = 10
-    asumilation()
-    paras.NODE_NUMBER = 15
-    asumilation()
-    paras.NODE_NUMBER = 20
-    asumilation()
-    paras.NODE_NUMBER = 25
-    asumilation()
 
+    # paras.NODE_NUMBER = 4
+    # asumilation()
+    # paras.NODE_NUMBER = 8
+    # asumilation()
+    # paras.NODE_NUMBER = 16
+    # asumilation()
+    # paras.NODE_NUMBER = 32
+    # asumilation()
+    # paras.NODE_NUMBER = 64
+    # asumilation()
+    # paras.NODE_NUMBER = 128
+    # asumilation()
+    # paras.NODE_NUMBER = 256
+    # asumilation()
+
+
+    # paras.RETRY_OPEN = True
+    # paras.BACKOFF_METHOD = 0
+    # paras.NODE_NUMBER = 4
+    # asumilation()
+    # paras.NODE_NUMBER = 8
+    # asumilation()
+    # paras.NODE_NUMBER = 16
+    # asumilation()
+    # paras.NODE_NUMBER = 32
+    # asumilation()
+    # paras.NODE_NUMBER = 64
+    # asumilation()
+    # paras.NODE_NUMBER = 128
+    # asumilation()
+    # paras.NODE_NUMBER = 256
+    # asumilation()
+
+    paras.RETRY_OPEN = True
     paras.BACKOFF_METHOD = 1
-    paras.NODE_NUMBER = 5
+    paras.NODE_NUMBER = 4
     asumilation()
-    paras.NODE_NUMBER = 10
+    paras.NODE_NUMBER = 8
     asumilation()
-    paras.NODE_NUMBER = 15
+    paras.NODE_NUMBER = 16
     asumilation()
-    paras.NODE_NUMBER = 20
+    paras.NODE_NUMBER = 32
     asumilation()
-    paras.NODE_NUMBER = 25
+    paras.NODE_NUMBER = 64
+    asumilation()
+    paras.NODE_NUMBER = 128
+    asumilation()
+    paras.NODE_NUMBER = 256
     asumilation()
 
 

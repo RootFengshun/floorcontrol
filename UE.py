@@ -117,7 +117,7 @@ class Idle(State):
                 self.machine.nodeHandler.retreat_start_timestamp = self.env.now
                 self.req_timer_proc = self.env.process(self.req_timer(self.machine.nodeHandler.retreat_period))
             else:
-                if self.env.now - self.machine.nodeHandler.count_req_timestamp > 20:
+                if paras.BACKOFF_METHOD == 1 and self.env.now - self.machine.nodeHandler.count_req_timestamp > 3:
                     self.machine.nodeHandler.count_retreat = 0
                     self.machine.nodeHandler.retreat_period = 0
                     self.req_timer_proc = self.env.process(self.req_timer(random.expovariate(paras.REQ_EXP_VALUE)))
@@ -200,7 +200,7 @@ class Taken(State):
         send(signal.FLOOR_TAKEN, self.id, self.env)
         self.env.process(self.speak_timer())
     def speak_timer(self):
-        yield self.env.timeout(paras.TANKEN_TIME)
+        yield self.env.timeout(random.expovariate(paras.TANKEN_TIME))
         Logger().do().info('time@'+str(self.env.now)+'@ send ' + str(self.id) + " " + str(signal.FLOOR_RELEASE))
         send(signal.FLOOR_RELEASE, self.id, self.env)
         self.machine.transfer("state_idle")
@@ -270,7 +270,8 @@ class Node:
 
     def get_retreat_time(self):
 
-        win = math.pow(2, self.count_retreat) > data.cw[0.02][paras.NODE_NUMBER] and math.pow(2, self.count_retreat) or data.cw[0.02][paras.NODE_NUMBER]
+        # win = math.pow(2, self.count_retreat) > data.cw[0.02][paras.NODE_NUMBER] and math.pow(2, self.count_retreat) or data.cw[0.02][paras.NODE_NUMBER]
+        win = data.cw[0.02][paras.NODE_NUMBER]
         if paras.BACKOFF_METHOD == 0:
             # 0 是二进制
             win =  math.pow(2, self.count_retreat)
