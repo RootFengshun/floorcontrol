@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import re
 def doonfile():
 
-    data = open("data/data4/22.log",'r')
-    newdata = open("data/data4/2.log",'w')
+    data = open("data/data5/22.log",'r')
+    newdata = open("data/data5/2.log",'w')
     lines = data.readlines()
     for line in lines:
         if line.find("send") >= 0 or line.find("retreat")>=0 or line.find("time")>=0:
@@ -125,7 +125,7 @@ def writeCleanData(n0, n1,n2):
 if __name__ == '__main__':
     # doonfile()
 
-    #
+    # #
     r0,m0,f0,t0= draw("data/data4/0.log")
     r1,m1,f1,t1=draw("data/data4/1.log")
     r2,m2,f2,t2=draw("data/data4/2.log")
